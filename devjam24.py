@@ -148,7 +148,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 <button type="submit">Login</button>
             </form>
             """)
-        
+
         elif self.path == "/signup":
             self._render_page("Sign Up", """
             <h2>Sign Up</h2>
@@ -184,6 +184,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     <button type="submit">Send</button>
                 </form>
                 """)
+        
+        elif self.path == "/events":
+            # Upcoming events (for now, static content)
+            self._render_page("Upcoming Events", """
+            <h2>Upcoming Events</h2>
+            <ul>
+                <li>Event 1: Python Workshop - Sept 25</li>
+                <li>Event 2: Web Development Bootcamp - Oct 10</li>
+            </ul>
+            """)
 
         elif self.path == "/logout":
             if username:
@@ -251,19 +261,18 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             content_type, pdict = cgi.parse_header(self.headers.get('Content-Type'))
             if content_type == 'multipart/form-data':
                 form_data = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ={'REQUEST_METHOD': 'POST'})
-                file_item = form_data['file']
+                uploaded_file = form_data['file']
 
-                if file_item.filename:
-                    file_path = os.path.join(UPLOAD_DIR, file_item.filename)
+                if uploaded_file.filename:
+                    file_path = os.path.join(UPLOAD_DIR, uploaded_file.filename)
                     with open(file_path, 'wb') as f:
-                        f.write(file_item.file.read())
-
-                    self._render_page("Upload Successful", f"<h2>Upload Successful!</h2><p>File saved as: {file_item.filename}</p>")
+                        f.write(uploaded_file.file.read())
+                    self._render_page("File Uploaded", f"<h2 class='success'>File '{uploaded_file.filename}' uploaded successfully!</h2>")
                 else:
-                    self._render_page("Upload Failed", "<h2>No file provided. Please try again.</h2><a href='/upload'>Try again</a>")
+                    self._render_page("Upload Failed", "<h2 class='error'>No file selected for upload.</h2>")
 
         elif self.path == "/chat":
-            # Handle chat
+            # Handle chat message submission
             username = self._is_logged_in()
             if not username:
                 self._render_page("Access Denied", "<h2 class='error'>You must be logged in to access this feature.</h2><a href='/login'>Login</a>")
@@ -271,24 +280,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length).decode()
-            message = parse_qs(post_data).get('message', [''])[0]
-            print(f"New chat message from {username}: {message}")
+            post_data = parse_qs(post_data)
 
-            self._render_page("Chat Room", f"""
-            <h2>Chat Room</h2>
-            <p><strong>You:</strong> {message}</p>
-            <form method="POST" action="/chat">
-                <input type="text" name="message" placeholder="Your message"><br>
-                <button type="submit">Send</button>
-            </form>
-            """)
+            message = post_data.get('message', [''])[0]
+            self._render_page("Chat Room", f"<h2>Chat Room</h2><p><b>{username}:</b> {message}</p><a href='/chat'>Go back</a>")
 
-def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8000):
-    """Run the server."""
+def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8080):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
-    print(f'Starting httpd on port {port}...')
+    print(f"Starting server on port {port}")
     httpd.serve_forever()
 
-if _name_ == '_main_':
+if __name__ == "__main__":
     run()
