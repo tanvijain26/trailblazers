@@ -307,7 +307,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             # For simplicity, print message to console (or save it to a file)
             print(f"New chat message: {message}")
 
-            self._render_page(Nf"""
+            self._render_page("""
             <h2>Chat Room</h2>
             <form method="POST" action="/chat">
                 <input type="text" name="message" placeholder="Your message"><br>
